@@ -75,7 +75,7 @@ Let's start by discussing data integrity.  This term, in respect to DBMS's, refe
 
 SQL constraints are a way to implement this by setting rules which are enforced on tables in relational databases to limit the type of data or values that can be inserted, updated or deleted within tables. These constraints ensure the accuracy and the reliability of data stored in the table.  
 
-Normalization is necesarry to reduce redundancy and improve data integrity by arranging data in multiple tables and defining relationships between them.  The low-level mechanism  in which we establish these relationships in a database is through keys, which are a special type of constraint that can identify a specific row or refer to a specific row in another table. By creating two tables, `classes` and `teachers`, we can reduce redundancy by using keys to represent rows of information.  For example, if this were represented by a single table, the teacher column could potentially have many rows with the same value, as this is a one-to-many relationship. 
+Normalization is necesarry to reduce redundancy and improve data integrity by arranging data in multiple tables and defining relationships between them.  The low-level mechanism in which we establish these relationships in a database is through keys, which are a special type of constraint that can identify a specific row or refer to a specific row in another table. By creating two tables, `classes` and `teachers`, we can reduce redundancy by using keys to represent rows of information.  For example, if this were represented by a single table, the teacher column could potentially have many rows with the same value, as this is a one-to-many relationship. 
 
 Primary keys identify an entity uniquely across a database, and carry with them the `NOT NULL` and `UNIQUE` constraints.  Foreign keys columns reference the primary key column of (usually) another table via the `REFERENCES` keyword.  The foreign key constraint specifies that the key can only contain values that are in the referenced primary key.  This means that if we attempt to add a value to our foreign key column that is not present already as a primary key in our referenced table, then an error will arise. 
 
@@ -187,6 +187,8 @@ bc this will insert 12345678.120 which will be too any digits for the precision.
 
 
 
+
+
 ```sql
 CREATE TABLE example(
 	some_num int,
@@ -229,13 +231,27 @@ This value represents nothing, that is, the absence of any other value. The cruc
 
 When a `NULL` value appears to either side of any ordinary comparison operator (such as `=`, `<`, `>=`, etc.), the operator will return `NULL` instead of `true` or `false`. The empty output for the previous statement was an example of how `psql` displays NULL values:
 
-When dealing with `NULL` values, **always** use the `IS NULL` or `IS NOT NULL` constructs: This will give `t` or `f` value
+When dealing with `NULL` values, **always** use the `IS NULL` or `IS NOT NULL` constructs: This will give `t` or `f` value.
+
+This can be seen if we run the following code:
+
+```sql 
+SELECT false = NULL; #NULL (NULL on either side of equality returns NULL)
+SELECT NULL = NULL; #NULL (NULL on either side of equality returns NULL)
+SELECT false IS NOT NULL; #true (false is not equivalent to NULL)
+SELECT true IS NOT NULL; #true (true is not equivalent to NULL)
+SELECT NULL IS NULL; #true (IS NULL/IS NOT NULL will give t/f values)
+```
 
 The `IS NOT NULL` operator is used to test for non-empty values (NOT NULL values).
 
 The `IS NULL` operator is used to test for empty values (NULL values).
 
 Note that because you’re not retrieving any data from the database and  you’re only comparing values or the absence of values, you don’t need to include a `FROM` clause in this query.
+
+In ruby, when you need a boolean value, `nil` is treated as `false` and values other than  `nil` or `false` are treated as true.
+
+
 
 
 
@@ -404,9 +420,11 @@ Indexes are best used in cases where sequential reading is inadequate. For examp
 
 In the description of the table schema, we can see three entries listed under `Indexes:`
 
-`"books_pkey" 
-"books_isbn_key" 
-"books_author_id_idx" `
+`"books_pkey"` - Created automatically by SQL because this column was defined as a Primary Key
+
+`"books_isbn_key"` - Created automatically cy SQL because this column was defined with the `UNIQUE` constraint 
+
+`"books_author_id_idx"` - Indexes are not automatically created for FK's, but are good candidates as FK's aid in mapping. This must have been explicitly created in the code. 
 
  The `btree`part of each entry identifies the *type* of index used (PostgreSQL uses B-tree by default for all indexes, and it is the only type available for unique indexes), followed by the name of the column that is indexed.
 
@@ -418,5 +436,494 @@ A B-tree index creates a multi-level tree structure that breaks a database down 
 
 
 
-**If we create a table with an id column and specify it as serial, and we look at the schema of that table, what will be shown as a Type of id? Why? **
+(16)**If we create a table with an id column and specify it as serial, and we look at the schema of that table, what will be shown as a Type of id? Why? **
 
+The SERIAL data type stores a sequential integer, of the `INT` data type that is automatically assigned by the database server when a new row is inserted. 
+
+SERIAL values in a column are not automatically unique, but they are by definition `NOT NULL`. You must apply a unique index or primary key constraint to this column to prevent duplicate serial numbers. 
+
+**SERIAL creates a regular SQL sequence** and implies DEFAULT nextval(<seqname>) , caching the results for reuse in the current session.
+
+*A **sequence** is a special kind of relation that generates a series of numbers. A sequence will remember the last number it generated, so it will generate numbers in a predetermined sequence automatically.*
+
+1. All tables should have a primary key column called `id`.
+2. The `id` column should automatically be set to a unique value as new rows are inserted into the table.
+3. The `id` column will often be an integer, but there are other data types (such as UUIDs) that can provide specific benefits.
+
+`CREATE SEQUENCE` statements modify the characteristics and attributes of a database by adding a sequence object to the database structure. It does not actually manipulate any data, but instead manipulates the data definitions. As such, `CREATE SEQUENCE` statements are part of the DDL sublanguage.
+
+It could also be argued that `CREATE SEQUENCE` is DML; the sequence object it creates is a bit of data that is used to keep track of a sequence of automatically generated values, so it can be thought of as being part of the data instead of a characteristic of the data. However, all `CREATE`statements (not just `CREATE SEQUENCE`) are generally thought of as DDL.
+
+The default serial starting number is 1, but you can assign an initial value, *n*, when you create or alter the table. 
+
+- You must specify a positive number for the starting number. 
+- If you specify zero (0) for the starting number, the value that is used is the maximum positive value that already exists in the SERIAL column + 1. 
+
+
+
+(17)
+
+ ```sql
+ SELECT age, full_name FROM students
+ WHERE id < 2;
+ ```
+
+**What type of statement is this code presenting? Explain all components of this statement. **
+
+`SELECT`
+
+SQL query to select data in a database. This is type of SQL statement that allows users to search data in a database and return a result set of records from one or more tables. 
+
+`age, full_name`
+
+There are identifiers and keywords in SQL statements. Identifiers are the names of tables and columns, and it is best to refrain from naming these identifers with keyword names. If this is unavoidable, we must use double quotes around the identifier name so PostgreSQL treats it as intended. These specific identifiers are attributes/columns of the `students` table.  The `SELECT` clause specifies one or more columns to be retrieved.
+
+`FROM`
+
+This clause is a `SELECT` statement option that allows users to specify which table they wish to query data. There can be optional `JOIN` subclauses to specify the complete dataset the user wishes to query. 
+
+`students`
+
+This is another identifier that specifies the table the user wishes to query and is found in the `FROM` clause.  
+
+`WHERE`
+
+We can qualify a query by adding a `WHERE` clause.  This will identify which rows are desired. It is important to note that aggregate functions cannot be included in the `WHERE` clause.  The use of a subquery would be useful in these situations. `WHERE` clauses can be utilized in `SELECT`, `UPDATE`, and `DELETE` statements. 
+
+`id < 2`
+
+The `WHERE` clause will include an expression which will evaluate to a Boolean value.  The rows in which this expression evaluate to true are included.  Comparison predicates, logical operators, and string matching operators are all useful in these expressions. This expression uses the comparison operator `<` to determine if the value assigned to the `id` attribute for the specific row is less than the integer `2`.  If this evaluates to `true`, the row will be included in our result table. 
+
+`;`
+
+The semicolon is the standard way to separate SQL statements.  It is used as a statement terminator. 
+
+(18)
+
+
+
+```sql
+SELECT year FROM schedule WHERE year > 2010;
+```
+
+**Why will this code result in an error? Why or why not? **
+
+If the datatype of year is `INTEGER` then no error will be raised.  If `year` is of the `TEXT` datatype, then we will have to use year::integer > 2010 to ensure that the year is first temporarily converted to an INTEGER for comparison in the WHERE clause. Because `year` is technically an SQL keyword, we should use double quotes around `year` to ensure SQL treats it as an identifier.
+
+
+
+(19)
+
+```sql
+SELECT name, age FROM students WHERE age = NULL;
+```
+
+**Will this result in an error? Why or why not? If not what will be the output of that code?**
+
+This will not result in an error.  `NULL` represents the absence of a value in SQL.  In the above example the comparison equal operator is used in the `WHERE` clause.  The intention is to compare the value of `age` for that specific row to `NULL`.  Instead of a true/false BOOLEAN value being returned, `NULL` is returned (even if the value of `age` for that column is `NULL`).  
+
+The code will output:
+
+```sql
+ name | age 
+------+-----
+```
+
+This is because if `NULL` is on either side of a comparison operator, `NULL` will always be returned.  To rectify this code, `IS` should replace the `=` operator.  That is, the `WHERE` clause should look like this:
+
+```sql
+WHERE age IS NULL;
+```
+
+If we want to check if a value is not `NULL`, then `IS NOT NULL` should be used. This will ensure that a BOOLEAN value is returned.  
+
+If we change our code to this:
+
+```sql
+SELECT name, age FROM students WHERE age IS NULL;
+```
+
+then we will return the name and age column values for all rows in which `age` is `NULL`.
+
+
+
+(20)
+
+```sql
+SELECT full_name FROM students WHERE full_name ILIKE '%Johanson';
+```
+
+**Which of the following names would be returned and why?**
+
+- Johanson
+- 'Johanson Branson'
+- 'Eva B. Johanson'
+- 'johanson'
+
+The names Johanson, Eva B. Johanson, and johanson will be returned.  `ILIKE` is a case insensitive string matching operator (keyword).  This is used alongside `%` which acts as a placeholder.  It can represent zero or more characters, so any name that ends with/is`Johanson` or `johanson` will be returned.  
+
+
+
+(21)
+
+```sql
+name   |   age   |   participated
+---------------------------------
+'Ann'  |   13    |   t
+'Ben'  |   12    |   
+'Emma' |   15    |   f
+'Kat'  |   12    |   f
+```
+
+**Write a query that retrieves all the names of kids for whom the value of participated column is not true. **
+
+```sql
+SELECT name FROM students WHERE participated != true;  #OR
+SELECT name FROM students WHERE participated <> true;
+```
+
+Both `!=` and `<>`are comparison operators for 'not equal'.
+
+
+
+(22)
+
+```sql
+ERROR:  column "users.full_name" must appear in the GROUP BY clause or be used in an aggregate function
+```
+
+**What does this error message tell us? Write a statement that could cause an error like that and describe ways to resolve this error. **
+
+This message tells us that a `GROUP BY` clause was used in the query and the column `full_name` from the `users` table was not present in the `GROUP BY` clause, was not in an aggregate function, and/or was not functionally dependant on the grouped columns. 
+
+Lets examine how `GROUP BY` works:
+
+Data will aggregated by whatever is specified in the `GROUP BY` clause. For example, if the initial query was as follows:
+
+```sql
+SELECT full_name, age FROM users
+GROUP BY age;
+```
+
+SQL would group together all the rows in which the value in the age column was the same. Then what would become of the `full_name` column? This is where the problem lies.  There is more than one possible value that would be returned from the column that is not grouped.  This ambiguity is what causes the error statement. 
+
+
+
+- The easiest way to fix this code would be to add the `full_name` attribute to the `GROUP BY` clause.  One single value would be returned for each row, and an error would not be returned. 
+
+```sql
+SELECT full_name FROM users 
+GROUP BY full_name;
+```
+
+
+
+- Another way to remedy this would be to perform an aggregate function on the ungrouped column. This would perform an operation on a group of rows and return a single value.
+
+Let's try this:
+
+```sql
+SELECT count(full_name), age FROM users 
+GROUP BY age;
+```
+
+This code will count the number of values in the `full_name` columns that have the same value in the `age` column.  This works because now we have a single value (an integer in the full_name row) for a single row in the `age` column.  
+
+
+
+- I also want to examine functional dependancy as a way to circumvent using an aggregate function on ungrouped columns.  
+
+```sql
+SELECT full_name FROM users
+GROUP BY id;
+```
+
+A functional dependancy exists if the grouped column is a Primary Key (PK) of the table in which the ungrouped column is present. For example, the `full_name` column will always have a single value if we group by the PK, because the PK `id` uniquely identifies the `full_name` attribute. Therefor there will be no ambiguity and only one possible value will be returned in each row in the `full_name` column.
+
+
+
+(23)
+
+````sql
+```jsx
+id |    name    |    year_of_birth    |    grade
+-------------------------------------------------
+1  |  'Eddie'   |   1986-01-01        |   A
+2  |  'Maggie'  |   1975-04-11        |   B+
+3  |  'Elenore' |   1995-03-13        |   A-
+```
+````
+
+- **Write a query that returns names of students who were born in April**
+
+  ```sql
+  SELECT name FROM students 
+  WHERE date_part('month', year_of_birth) = 4
+  ```
+
+  
+
+- **Write a query that returns names of students who were born on 11th of April**
+
+  ```sql
+  SELECT name FROM students 
+  WHERE date_part('month', year_of_birth) = 4 AND 
+  date_part('day', year_of_birth) = 11;
+  ```
+
+  
+
+- **Write a query that returns all students who were born in 1986**
+
+  ```sql
+  SELECT name FROM students  
+  WHERE date_part('year', year_of_birth) = 1986;
+  ```
+
+  
+
+- **Write a query that returns the oldest person**
+
+  ```sql
+  SELECT name FROM students 
+  ORDER BY year_of_birth ASC
+  LIMIT 1;
+  ```
+
+  *oldest person will have the earliest DOB so they will be listed first in ASC order
+
+
+
+(24)
+
+**What syntax would you use to remove all rows from an imaginative students table? Present a code that illustrates that. **
+
+```sql'
+DELETE FROM students;
+```
+
+`DELETE` is part of SQL sub-language DML, or data manipulation language.  The SQL constructs of DML include `SELECT`,`INSERT`,`UPDATE`, and `DELETE`.  `DELETE` is the `d`in the acronym CRUD, which makes up DML.  `DELETE` will delete entire rows of data from a database table.  We can specify which rows to delete through the use of a `WHERE` clause, or leave this out (as shown above) to delete all rows. Once run, this statement is irreversable.  Having the data backed up and/or running a `SELECT` query on rows intended to be deleted would be helpful to ensure only data that is unwanted is deleted.
+
+
+
+(25)
+
+**Why do we need to create multiple tables instead of just keeping all the data in one table?**
+
+Normalization is a procedure in which data is organized in a database.  This data organization is carried out through the creation of tables and establishing relationships between these tables. Why is this crucial in regards to databases? Wouldn't a single table with all of our data suffice? 
+
+Imagine having a single table in a database with seemingly endless rows and columns.  What problems could arise? To start, this could be very overwhelming and easily disorganized. There is also the issue of redundancy, which is something that should be avoided in any code if possible.  
+
+Let's say we have the names, ages, and addresses of customers and they each order different products with product numbers, names, locations,etc.  Each time a product is purchased, all of this data is re-entered into our database.  This could lead to input errors and would make any updates laborous. Our data integrity is at risk of being compromised, as maintaining accuracy and consistency is difficult with this lack of data organization.
+
+Now lets conceptualize a schema, or organization/structure of a database, that will work better for us.  This is the mechanism in which we carry out normalization. Creating an entity-relationship-diagram (ERD) will allow us to visualize our database and table structure, and the relationships between them. This high level of abstraction will enable us to make the best decisions logically for our data organization. Entities (real world objects) will later help define our relations, or tables, and their relationships will assist us with our data definitions. 
+
+If we revisit our contrived single table example, we can better understand how normalization helped us reduce reduncancy and improved data integrity.  I'm going to describe our physical schema. We created three separate tables: customers, orders, and products. Each of these tables contains a primary key which will uniquely identify a row in our table. Our relationship between `customers` and `products` is a many-to-many relationship (cardinality), so we have an orders table to join them.  This join table will have two Foreign Keys (`customer_id`/`product_id`) that will reference the Primary Keys in our customers (`customers.id`) and orders (`orders.id`) tables. Now instead of re-entering customer information and product information each time an order is placed, we can just add a row with integers into our `orders` table.  This drastically decreased redundancy and allows us to update customer and product information quickly. 
+
+Through the implementation of Primary and Foreign Keys, we've also ensured that our data has referential integrity.  A value in our referencing table (child table) cannot reference a value that is not present in our referenced table (parent table).  In practice, our `users` JOIN table in our example cannot hold values in the `customer_id`/`product_id` (FK's) columns that are not present in their respective `customers.id`/`products.id` (PK's) columns .  In this way, table relationships will remain intact and consistent. 
+
+
+
+(26)
+
+```sql
+id |    name    |    year_of_birth    |    grade |  class
+-----------------------------------------------------------
+1  |  'Eddie'   |   1986-01-01        |   A      |  Math
+2  |  'Maggie'  |   1975-04-11        |   B+     |  History
+3  |  'Elenore' |   1995-03-13        |   A-     |  French
+```
+
+- **We no longer want to have classes at the same table as students. What are the steps you would take to create another table `classes` and create a relationship between `students` and `classes`.**
+
+  ```sql
+  ALTER TABLE students DROP COLUMN class; 
+  
+  CREATE TABLE classes (                  
+    id serial PRIMARY KEY,
+    name text
+  );
+  
+  INSERT INTO classes (name) VALUES 
+    ('Math'),
+    ('History'),
+    ('French');
+    
+  ALTER TABLE students ADD COLUMN class_id integer REFERENCES classes(id);
+  
+  UPDATE students SET class_id = 1 WHERE id = 1;
+  UPDATE students SET class_id = 2 WHERE id = 2;
+  UPDATE students SET class_id = 3 WHERE id = 3;
+  ```
+
+  
+
+- **Create `classes` table and the relationship between `classes` and `students`.**
+
+The relationship is defined by a PK in the classes table and a FK referencing that PK in the students table.  The cardinality (number of objects on each side of the relationship) thus far is a one-to-many relationship, where a class can have many students, but a student can only have one class. The modality of the students table and the classes table is 0 as a student does not need to be in a class and a class does not need to have any students.  Modality is defined as whether the relationship is required or not.  A modality of `0` means that is is not required, while `1` means it is required. 
+
+
+
+(27)
+
+**What benefits does presenting cardinality give us? How may the information that representing cardinality in our diagrams be useful for the database design?**
+
+Cardinality is a modeling concept that indicates the largest number of objects allowed on either side of the relationship.  The only two choices are one or many. When implementing this modeling concept in the physical schema, it is the relationship between a row (instance) in one table (entity) and a row in another table through Primary and Foreign Keys. This is important because it is a link, or tangible relationship, from one entity to another. 
+
+- One-to-One- A student has one id number and an id number has one student. We may even decide that these two tables are better as one after some thought. 
+
+  ```sql
+  CREATE TABLE id_number (
+    id serial PRIMARY KEY,
+    id_num integer
+  );
+  
+  CREATE TABLE student (
+    id serial PRIMARY KEY REFERENCES id_number(id),
+    name text
+  );
+  ```
+
+  
+
+- one- to - many - A teacher/class relationship.  A teacher can have many classes and the class can have one teacher. (Assume no teachers assistants)
+
+ ```sql
+ CREATE TABLE teachers (
+   id serial PRIMARY KEY,
+   name text
+ );
+ 
+ CREATE TABLE classes (
+   id serial PRIMARY KEY,
+   class_name text,
+   teacher_id integer REFERENCES teachers(id)
+ );
+ ```
+
+
+
+- many- to- many- customers can purchase many products and products can be bought by many customers 
+
+  ```sql
+  CREATE TABLE customers (
+    id serial PRIMARY KEY,
+    cust_name text 
+  );
+  
+  CREATE TABLE products (
+    id serial PRIMARY KEY,
+    prod_name text
+  );
+  
+  CREATE TABLE orders(
+    id serial PRIMARY KEY,
+    customer_id integer REFERENCES customers(id),
+    product_id integer REFERENCES products(id)
+  );
+  ```
+
+  
+
+As we can see, understanding the cardinality will dictate the design details of our database.  A one-to-one relationship can mean that our primary key is the same column as our foreign key. A one-to-many will help us determine which table should have a foreign key and how that will reference our other table.  It is important to note that the FK column does not have a UNIQUE constraint so many instances of that entity can have the same value (referencing the 'one' cardinality).  A many-to-many relationship will tell us that a JOIN table is necessary, and that there will be foreign keys referencing the two participants. Other attributes/columns in our JOIN table will be relevent to both entities.
+
+
+
+(28)
+
+**Consider the ERD below. Describe the relationships between those entities:**
+
+![img](https://fine-ocean-68c.notion.site/image/https%3A%2F%2Fs3-us-west-2.amazonaws.com%2Fsecure.notion-static.com%2Fb174c93e-368b-42ea-a33a-08c5339b7543%2FUntitled.png?table=block&id=45e76212-c132-4e65-95f1-0a8557c5d587&spaceId=88e19fde-7b54-4f65-9c44-d9e4fc3f307b&width=1280&userId=&cache=v2)
+
+The cardinality is a one- to-many relationship. A Primary Key in the `Director` table will reference a Foreign Key in the `Film` table. 
+
+
+
+(29)
+
+**Consider the following diagram. Describe what is the cardinality between entities?**
+
+![img](https://fine-ocean-68c.notion.site/image/https%3A%2F%2Fs3-us-west-2.amazonaws.com%2Fsecure.notion-static.com%2F2a74d67d-7f6f-4909-be4a-e6f7d1d39978%2FUntitled.png?table=block&id=32bc0ead-56f6-4c15-bffc-71f9f512b410&spaceId=88e19fde-7b54-4f65-9c44-d9e4fc3f307b&width=1280&userId=&cache=v2)
+
+The cardinality of `students` and `university` is one-to-many with the FK in `university` referencing the PK in `student`. The modality is `1` for both which means that the relationship is required for `students` and `university`.
+
+The cardinality of `student` and `scholarship` is many- to- many. There will be PK's in both tables and a JOIN table will have two FK's that reference the two tables. The modality is `1` for `student` and `0` for `scholarship`.  The scholarship must have a student, but the student does not have to have a scholarship.
+
+The cardinality of `scholarship` and `university` is one-to-many with the FK in `scholarship` referencing the PK in `university`. The modality is `1` for both which means that the relationship is required for `scholarship` and `university`. Universities must have scholarships, and scholarships must belong to a university.
+
+
+
+(30)
+
+```sql
+SELECT * FROM customers;
+customer_id | name  
+-------------+-------
+           1 | Johny
+           2 | Ben
+           3 | Gary
+
+SELECT * FROM orders;
+order_id | customer_id | orders 
+----------+-------------+--------
+        1 |           1 | book
+        2 |           2 | mug
+        3 |           3 | chair
+
+\d orders 
+
+Column    |  Type   | Collation | Nullable |                 Default                  
+-------------+---------+-----------+----------+------------------------------------------
+ order_id    | integer |           | not null | nextval('orders_order_id_seq'::regclass)
+ customer_id | integer |           |          | 
+ orders      | text    |           |          | 
+Indexes:
+    "orders_pkey" PRIMARY KEY, btree (order_id)
+Foreign-key constraints:
+    "orders_customer_id_fkey" FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+```
+
+**What will happen if we run the following statement? Why? **
+
+```sql
+DELETE FROM customers WHERE customer_id = 3;
+```
+
+```sql
+ERROR:  update or delete on table "customers" violates foreign key constraint "orders_customer_id_fkey" on table "orders"
+DETAIL:  Key (customer_id)=(3) is still referenced from table "orders".
+```
+
+This error will be raised because `orders.customer_id` was defined as a Foreign Key without an `ON DELETE CASCADE` constraint.  The child table, `orders`, contains a column `customer_id` which references the parent table,`customers` Primary Key column (`customers.customer_id`).
+
+If we delete a customer from our `customers` table, we could not reference that customer in the `orders` table. Because there is already a reference to the customer with a `customer_id` of 3 in the `orders` table, PostgreSQL will raise and error and leave the tables as is.  
+
+This ensures that the referential integrity is maintained between the two tables, which is a crucial to database design.
+
+
+
+(32)
+
+```sql
+CREATE TABLE students (
+	id serial PRIMARY KEY,
+	name varchar(100) 
+);   
+
+CREATE TABLE addresses (
+	student_id int, 
+	address text,
+	city text,
+	PRIMARY KEY (student_id),
+	FOREIGN KEY (student_id) REFERENCES students (id)
+		ON DELETE CASCADE
+);
+```
+
+**Consider the code below. What type of cardinality does this example present? Explain how did you deduce that.**
+
+
+
+
+
+https://fine-ocean-68c.notion.site/LS180-906a0630d9d04f43803f149fd91196f0?p=2a398057ddd4464faa19b2eb82f7df52&pm=s
