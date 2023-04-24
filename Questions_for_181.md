@@ -922,6 +922,299 @@ CREATE TABLE addresses (
 
 **Consider the code below. What type of cardinality does this example present? Explain how did you deduce that.**
 
+This is an example of a one-to-one (1:1) cardinality: An instance of one entity associates with, at most, one instance of another entity, and vise versa.  When I say "at most", I am referring to the modality of the relationship.  If the relationship is required than it must have one correlating instance, but it may have none if the relationship is not required. 
+
+This schema allows us to deduce that `addresses` has a modality of `1`, meaning that an address must have a student.  We can see again through the PK constraints enforcing the `NOT NULL` constraint on the FK.  
+
+We can add a student to the `students` table that is not present in the `addresses` table, so the `students` table could have a modality of `0`.  This means that the relationship is not required, and there can be students with no addresses. 
+
+These relationships are the lease common in a database, as there wouldn't be a redundancy issue with combining these tables. 
+
+We can see in the `addresses` that the attribute `student_id` is defined as both the PK and the FK.  That is our FK is also constrained by the PK constraints, which include `UNIQUE`.  This tells us that every row in the `addresses` table must have a different value in the `student_id` column.  Every address can only have one student and every student can only have one address. 
+
+You can also implement this by creating a separate PK and FK column in the child table and defining the FK with a UNIQUE constraint.  
+
+
+
+(34)
+
+```sql
+CREATE TABLE students (
+	id serial PRIMARY KEY,
+	name varchar(100) 
+);   
+
+CREATE TABLE addresses (
+	student_id int, 
+	address text,
+	city text,
+	PRIMARY KEY (student_id),
+	FOREIGN KEY (student_id) REFERENCES students (id)
+);
+```
+
+**What will happen if we delete a row in a `students` table, that is referenced by a record in  `addresses` table?**
+
+We can see that the FK, `student_id` in `addresses` is not defined with an `ON DELETE CASCADE`constraint.  Therefor, a deletion from the parent table (`students`) will not automatically delete any corresponding rows referencing it in the child table.  Attempting to delete a row referenced in the `addresses` table will cause an error, as that would violate the foreign key constraint defined on `addresses.student_id`. 
+
+This constraint, which requires that any value in the referencing column (FK of child table) must be present in the referenced column (PK of parent table), is how SQL enforces referential integrity.
+
+
+
+(35)
+
+```sql
+table 'classes'
+id |  name   
+----+---------
+  1 | math
+  2 | german
+  3 | physics
+
+table 'students'
+
+id | name  | class_id 
+----+-------+----------
+  1 | Harry |        1
+  2 | Ben   |        2
+  3 | Marry |        3
+  4 | Marry |        2
+```
+
+**Describe what the following statement will do and what will be the result of the query:**
+
+```sql
+SELECT students.name as "Student Name", classes.name as "Class name"
+	FROM students 
+	INNER JOIN classes 
+	ON students.class_id = classes.id;
+```
+
+This query will return a table with a column named 'Student name' and a column named 'Class name'.  SQL will use the information from the first table (`students`), the join type (`INNER JOIN`), the second table (`classes`), and the join condition (`ON students.class_id = classes.id`) to create a transient table.  An `INNER JOIN` will match rows from both tables that share the same key. All other rows will be ommited. `SELECT` will then retrieve the columns specified in the select clause (`students.name` and `classes.name`) from the transient table and all appropriate rows/columns will be returned.
+
+```sql
+ Student Name  | Class name 
+----+-------+----------
+ Harry         |   Math
+ Ben           |   German
+ Marry         |   Physics
+ Marry         |   German
+```
+
+
+
+(37)
+
+```sql
+table 'classes'
+id |  name   
+----+---------
+  1 | math
+  2 | german
+  3 | physics
+
+table 'students'
+
+id | name  | class_id 
+----+-------+----------
+  1 | Harry |        1
+  2 | Ben   |        2
+  3 | Marry |        3
+  4 | Marry |        2
+```
+
+**Describe how would a 'transient table' will look like. How many columns would it have and what would be their names? What rows would be included in that table?**
+
+```sql
+SELECT students.name as "Student Name", classes.name as "Class name"
+	FROM students 
+	INNER JOIN classes 
+	ON students.class_id = classes.id;
+```
+
+The transient table will include all rows from the `classes` and `students` tables that share a common key. It would have the sum of the columns from both the `students` and the `classes` tables.  The columns would be: `classes.id`, `classes.name`, `students.id`, ``students.name`and `students.class_id`. 
+
+
+
+(38)
+
+```sql
+table 'classes'
+id |  name   
+----+---------
+  1 | math
+  2 | german
+  3 | physics
+
+table 'students'
+
+ id | name  | year_of_birth | class_id 
+----+-------+---------------+---------
+  1 | Harry |  1987-02-04   |      1
+  2 | Ben  |  1976-11-13   |      2
+  3 | Marry|  1995-03-21   |      3
+  4 | Marry|  1995-03-21   |      2
+```
+
+- **Return a list of students names who are born in 90' and attend German classes**
+
+  ```sql
+  SELECT s.name FROM students AS s
+  WHERE class_id = (
+  SELECT c.id FROM classes AS c WHERE c.name = 'german')
+  AND DATE_PART('year',s.year_of_birth)::text LIKE '199%';
+  ```
+
+  OR 
+
+  ```sql
+  SELECT students.name 
+  	FROM students 
+  	JOIN classes 
+  		ON students.class_id = classes.id
+  			WHERE year_of_birth 
+  				BETWEEN '1990-01-01' AND '1999-12-31'
+  				AND classes.name = 'german';
+  ```
+
+  
+
+  OR
+
+  ```sql
+  SELECT s.name FROM students AS s
+  WHERE (s.class_id = (
+  SELECT c.id FROM classes AS c WHERE c.name = 'german'))
+  AND ((2000 > DATE_PART('year',s.year_of_birth) 
+  AND DATE_PART('year',s.year_of_birth) >= 1990));
+  ```
+
+- **Return a list of students born in  February along with a class they attend.** 
+
+```sql
+SELECT s.name, c.name FROM students AS s 
+INNER JOIN classes AS c 
+ON c.id = s.class_id 
+WHERE DATE_PART('month', s.year_of_birth) = 2;
+```
+
+
+
+(39)
+
+```sql
+Table "public.birds"
+ Column  |         Type          | Collation | Nullable |              Default              
+---------+-----------------------+-----------+----------+-----------------------------------
+ id      | integer               |           | not null | nextval('birds_id_seq'::regclass)
+ name    | character varying(25) |           |          | 
+ age     | integer               |           |          | 
+ species | character varying(15) |           |          | 
+Indexes:
+    "birds_pkey" PRIMARY KEY, btree (id)
+```
+
+**Lets say we alter the table with the following command: **
+
+```sql
+ALTER TABLE birds ADD CHECK (age > 0);
+```
+
+**Explain what this command does and where will the information be added to the schema?**
+
+This is a table level constraint and will be added to the `birds` table.  This check constraint will check a value in a specified column with a Boolean expression.  The value will be included if the check constraint evaluates to `true` or `NULL` for that value. This specific  check constraint will only include values in the `age` column that are above `0`. The constraint will be automatically named by SQL because the `ADD CONSTRAINT` was omitted from the `ALTER` statement. We can see the schema of `birds` by running the meta-command.
+
+```sql
+\d birds
+```
+
+
+
+(40)
+
+```sql
+ id | name  | year_of_birth | phone_num     | class_id 
+----+-------+---------------+---------------+---------
+  1 | Harry |  1987-02-04   |  909432987    |  1
+  2 | Ben   |  1976-11-13   |  099876567    |  2
+  3 | Marry |  1995-03-21   |  098787654    |  3
+  4 | Marry |  1995-03-21   |  908675356    |  2
+```
+
+**Add following constraints to the table: **
+
+- **if there is no name given anonymous should be added**
+
+  ```sql
+  ALTER TABLE students ADD CHECK (name NOT ILIKE 'anonymous');
+  ```
+
+- **class_id should always be greater than 0** 
+
+  ```sql
+  ALTER TABLE students ADD CONSTRAINT class_id_check CHECK (class_id > 0);
+  ```
+
+- **phone_num should not allow duplicates**
+
+  ```sql
+  ALTER TABLE students ADD CONSTRAINT phone_num_uniq UNIQUE (phone_num);
+  ```
+
+  *NOTE*- *UNIQUE constraints automatically create indexes on the specified column. UNIQUE is never a column constraint, and always a table constraint.* 
+
+- **year_of_birth should be obligatory**
+
+  ```sql
+  ALTER TABLE students ALTER COLUMN year_of_birth SET NOT NULL;
+  ```
+
+  *NOTE - NOT NULL is always a column constraint and the only one we can add as a column constraint to an ALTER TABLE statement*
+
+
+
+(41)
+
+```sql
+CREATE TABLE some_table(
+  name varchar(50) CHECK(length(name)> 1),
+  last_name varchar(100)
+);
+
+INSERT INTO some_table (last_name) VALUES ('Ericsson');
+```
+
+**Consider the code below. Will the following code result in an error, why?:**
+
+The code will not result in an error because the `name` column was not defined with a `NOT NULL` constraint. This means that if the column is not specified in the `INSERT` statement, then a `NULL` value will be added with no error. 
+
+
+
+(42)
+
+```sql
+ALTER TABLE elephants
+	 DROP CONSTRAINT some_const;
+```
+
+**Consider the code snippet below. What SQL sub-language does this code present:**
+
+This is part of the DDL sub- language, or the data definition language, of SQL.  The constucts of this sub-language include `CREATE`, `DROP`, and `ALTER`.  This defines the database structure, and will modify the schema. This specific `ALTER` statement will drop the `some_const` table constraint on the `elephants` table. 
+
+
+
+(43)
+
+```sql
+UPDATE elephants 
+	SET num_legs = 4
+	WHERE num_legs = 5;
+```
+
+**Consider the code snippet below. What SQL sub-language does this code present?**
+
+
+
 
 
 
