@@ -22,6 +22,8 @@ Coming back to our question, we can see that adding the `NULL` value to the `stu
 
 
 
+(2)
+
 ```sql
 CREATE TABLE teachers (
 	id serial PRIMARY KEY,
@@ -55,6 +57,8 @@ Now lets go a little deeper in our distinction between relation and entity.  Thu
 
 
 
+(3)
+
 ```sql
 CREATE TABLE teachers (
 	id serial PRIMARY KEY,
@@ -82,6 +86,8 @@ Primary keys identify an entity uniquely across a database, and carry with them 
 So by defining keys and constraints, we can ensure that any data within our database is the correct data type and within whatever bounds we set, if any, and also that if a value represents another row, then that row is present.  Ensuring data integrity allows for accurate recoverability, increases stability and performance, and improves reusability and maintainability of our database. 
 
 
+
+(4)
 
 ```sql
 SELECT teachers.name, 
@@ -122,6 +128,8 @@ SELECT teachers.name,
 
 
 
+(5)
+
 ```sql
 CREATE TABLE example (
 	id serial PRIMARY KEY,
@@ -147,7 +155,9 @@ CREATE TABLE example (
 
    •	Approximate types include floating point data types.
 
-   
+
+
+(6)
 
 ```sql
 CREATE TABLE example(
@@ -187,7 +197,7 @@ bc this will insert 12345678.120 which will be too any digits for the precision.
 
 
 
-
+(7)
 
 ```sql
 CREATE TABLE example(
@@ -218,6 +228,8 @@ Generally, there are three types of operators that are [used in SQL](https://www
    Comparison operators in SQL are used to check the equality of two expressions. It checks whether one expression is identical to another.  Comparison operators are generally used in the WHERE clause of a SQL  query. The result of a comparison operation may be TRUE, FALSE or  UNKNOWN. When one or both the expression is NULL, then the operator  returns UNKNOWN. 
 
 
+
+(8)
 
 ```sql 
 SELECT NULL IS NOT NULL;
@@ -253,7 +265,7 @@ In ruby, when you need a boolean value, `nil` is treated as `false` and values o
 
 
 
-
+(9)
 
 ```sql
 CREATE TABLE some_table (
@@ -288,6 +300,8 @@ ALTER City DROP DEFAULT;
 
 
 
+(10)
+
 ```sql
 CREATE TABLE some_table(
 	some_num decimal(10,4),
@@ -303,6 +317,8 @@ INSERT INTO some_table (some_num, some_t_or_f)
 `11` and `NULL`.  Although there is a default constraint that is added to the some_t_or_f column, the value `NULL` explicitly added to the column does not insert the default value.  The default value is only added when you insert a row into the table without specifying a value, but in this case we are specifying the absence of a value. 
 
 
+
+(11)
 
 ```ruby
 CREATE TABLE teachers (
@@ -328,6 +344,8 @@ Now let's say that you want to delete a teacher from the `teachers` table. That 
 
 
 
+(12)
+
 ```sql
 ERROR:  duplicate key value violates unique constraint "unique_id"
 DETAIL:  Key (id)=(1) already exists.
@@ -347,6 +365,8 @@ You can insert NULL values into columns with the UNIQUE constraint  because NULL
 
 
 
+(13)
+
 **Create a table teachers with a column called set_up_date and set it to text. Change the data type in that column to a date data type.**
 
 ```sql
@@ -363,6 +383,8 @@ TYPE date;
 * You may have to use `USING set_up_date::date` after `date`
 
 
+
+(14)
 
 ```sql
 my_books=# CREATE TABLE authors (
@@ -1212,6 +1234,907 @@ UPDATE elephants
 ```
 
 **Consider the code snippet below. What SQL sub-language does this code present?**
+
+This is part of the DML sub-language, or the data manipulation language of SQL.  The constructs of this sub-language include `SELECT`, `INSERT`, `UPDATE`, and `DELETE` (CRUD).  DML deals with the actual data in the database.
+
+
+
+(44)
+
+```sql
+CREATE TABLE students (
+  id serial PRIMARY KEY,
+  name varchar(25),
+  age int 
+);
+
+INSERT INTO students (name, age) 
+  VALUES ('Mary', 11), ('John', 12), ('Valery', 12);
+```
+
+**Will the following code result in an error? What is the code trying to do? **
+
+```sql
+ALTER TABLE students 
+  ALTER COLUMN name TYPE varchar(1);
+```
+
+Yes, this will return an error with the message `ERROR:  value too long for type character varying(1)`.  Because we already have data in our `name` column that is over one character long, PostgreSQL will not allow us to change the data type in this column to `varchar(1)`. 
+
+
+
+**How about this code:**
+
+```sql
+ALTER TABLE students 
+  ALTER COLUMN name TYPE varchar(100);
+```
+
+No error will be returned because the data that was inserted did not have values in the `name` column that were over 100 characters. The `ALTER` statement was successful and the datatype for name was changed from `varchar(25)` to `varvhar(100)`.  
+
+
+
+(45)
+
+```sql
+id | name  |year_of_birth|phone_num    | average_points 
+----+-------+---------------+---------------+---------
+ 1 | Harry | 1987-02-04 |  909432987   |  1
+ 2 | Ben   | 1976-11-13 |  099876567   |  6
+ 3 | Marry | 1995-03-21 |  098787654   |  7
+ 4 | Marry | 1995-03-21 |  908675356   |  0
+```
+
+**The schema is as follows:**
+
+```sql
+Table "public.students"
+     Column     |  Type   | Collation | Nullable |               Default                
+----------------+---------+-----------+----------+--------------------------------------
+ id             | integer |           | not null | nextval('students_id_seq'::regclass)
+ name           | text    |           | not null | 
+ year_of_birth  | text    |           |          | 
+ phone_num      | text    |           |          | 
+ average_points | integer |           |          | 
+Indexes:
+    "students_pkey" PRIMARY KEY, btree (id) 
+```
+
+- **Change name data type to take strings with max length of 50**
+
+```sql
+ALTER TABLE STUDENTS ALTER COLUMN name TYPE varchar(50);
+```
+
+
+
+- **change year_of_birth data type to DATE**
+
+```sql
+ALTER TABLE STUDENTS ALTER year_of_birth TYPE date 
+USING year_of_birth::date;
+```
+
+
+
+- **Change phone_num data type to be an integer**
+
+```sql
+ALTER TABLE STUDENTS ALTER phone_num TYPE integer
+USING phone_num::integer;
+```
+
+
+
+- **Change average_points to be able to take decimal point numbers that must be greater than 0 but less than 10**
+
+```sql
+ALTER TABLE STUDENTS ALTER average_points TYPE decimal(1,0),
+ADD CHECK (average_points >= 0);
+```
+
+
+
+- **Add a new column called highest_grade that is obligatory and can take a string with max length of 1 character.**
+
+```sql
+ALTER TABLE students 
+ADD COLUMN highest_grade varchar(1) DEFAULT 'E';
+
+UPDATE students SET highest_grade = DEFAULT;
+
+ALTER TABLE students 
+ALTER COLUMN highest_grade SET NOT NULL;
+```
+
+
+
+- **Now change the data type of highest_grade to only accept one of the following characters: ('A', 'B', 'C', 'D', 'F')**
+
+```sql
+ALTER TABLE students 
+ADD COLUMN highest_grade varchar(1) 
+DEFAULT 'E' 
+CHECK (highest_grade IN ('A','B','C','D','F','E'));
+```
+
+
+
+(46)
+
+```sql
+Table "public.students"
+     Column     |     Type     | Collation | Nullable |               Default                
+----------------+--------------+-----------+----------+--------------------------------------
+ id             | integer      |           | not null | nextval('students_id_seq'::regclass)
+ name           | text         |           | not null | 
+ year_of_birth  | date         |           |          | 
+ phone_num      | integer      |           |          | 
+ average_points | numeric(2,1) |           |          | 
+ highest_grade  | grade_type   |           |          | 
+Indexes:
+    "students_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "students_average_points_check" CHECK (average_points >= 0.0 AND average_points <= 9.9)
+```
+
+**Where grade_type is:**
+
+```sql
+CREATE TYPE grade_type as ENUM ('A', 'B', 'C', 'D', 'F');
+```
+
+**Will the following code result in an error? Why or why not?**
+
+```sql
+INSERT INTO students (name, year_of_birth, phone_num, average_points)
+  VALUES ('Edd', '1990-01-02', 123123432, 0.8);
+```
+
+No, there will be no error because there is not a `NOT NULL` constraint on the `highest_grade` column.  Because that column was not specified in the `INSERT` statement, `NULL` will be inserted into the `highest_grade` column.
+
+
+
+(47)
+
+```sql
+CREATE TABLE students (
+	id serial PRIMARY KEY,
+	name varchar(100) NOT NULL,
+  year_of_birth date,
+  passed boolean DEFAULT true  
+);
+```
+
+**Write all possible ways to insert data into the table where the only  data we have is the name 'John'. (take advantage of the DEFAULT value).**
+
+```sql
+INSERT INTO students (id, name, year_of_birth, passed) VALUES ....
+
+INSERT INTO students (DEFAULT, name, year_of_birth, passed) VALUES ...
+
+...
+id and passed can be absent, present, or DEFAULT in VALUES
+name has to be present 
+year_of_birth can be present or absent 
+ 
+```
+
+
+
+(48)
+
+**TABLE CREATION FOR PROBLEM (MANY- TO- MANY EXAMPLE)**
+
+```sql
+DROP TABLE students_classes;
+DROP TABLE students;
+DROP TABLE classes;
+
+
+CREATE TABLE classes (
+  id serial PRIMARY KEY,
+  name text
+);
+
+CREATE TABLE students (
+  id serial PRIMARY KEY,
+  name text not null,
+  year_of_birth date
+);
+
+CREATE TABLE students_classes (
+  class_id integer REFERENCES classes(id),
+  student_id integer REFERENCES students(id)
+);
+
+
+
+ALTER TABLE STUDENTS ALTER COLUMN name TYPE varchar(50);
+
+INSERT INTO classes (name) VALUES 
+('math'),
+('german'),
+('physics'),
+('french');
+
+INSERT INTO students (name, year_of_birth) VALUES
+('Harry', '1987-02-04'), 
+('Ben','1976-11-13'),
+('Marry','1995-03-21'),
+('John','1994-12-21');
+
+INSERT INTO students_classes (class_id, student_id) VALUES
+(1,1),
+(2,2),
+(3,3),
+(2,3);
+```
+
+```sql
+table 'classes'
+id |  name   
+----+---------
+  1 | math
+  2 | german
+  3 | physics
+  4 | french
+
+table 'students'
+
+ id | name  | year_of_birth | 
+----+-------+---------------+
+  1 | Harry |  1987-02-04   |  
+  2 | Ben   |  1976-11-13   | 
+  3 | Marry |  1995-03-21   | 
+  4 | John  |  1994-12-21   |  
+
+table 'students-classes'
+
+ id | class_id | student_id | 
+----+----------+------------+
+  1 |      1   |   1
+  2 |      2   |   2
+  3 |      3   |   3
+  4 |      2   |   3
+
+```
+
+**What will be the result if we run the following query:**
+
+```sql
+SELECT students.name, classes.name 
+  FROM students
+  JOIN students_classes
+    ON students_classes.student_id = students.id
+    JOIN classes
+      ON classes.id = students_classes.class_id;
+```
+
+ name  |  name   
+-------+---------
+ Harry | math
+ Ben   | german
+ Marry | physics
+ Marry | german
+
+
+
+(49)
+
+**This code is a result of running a FULL OUTER JOIN on three tables students, students_classes and classes: USE CODE FROM (48)**
+
+```sql
+ name  |  name   
+-------+---------
+ Harry | math
+ Ben   | german
+ Marry | physics
+ Marry | german
+ John  | 
+       | french
+(6 rows)
+```
+
+**We know that each JOIN operation creates a transient table. How did the transient table from the first JOIN operation look?**
+
+`students`and `students_classes` were joined with a `FULL OUTER JOIN` and a transient table that contains all the columns from both tables was temporarily created to query from: 
+
+`students.id`, `students.name`, `students.year_of_birth`, `students_classes.id`, `students_classes.class_id`,`students_classes.student_id`	
+
+We joined with `FULL OUTER JOIN` , which will include all rows (matched/unmatched) as defined by the `ON` clause. This means we will include values in the `students.name` and the `students_classes` column with `NULL` values.
+
+
+
+(50) 
+
+**Write a query that returns words concatenated into a single column:**
+
+- Johny
+- Likes
+- Mc
+- Donald's
+
+```sql
+SELECT CONCAT('Johny ','Likes ','Mc','Donald''s');
+```
+
+
+
+(51)
+
+**Lets say you have a database dump file called 'file_to_import.sql'. How can you import this file to your database? **
+
+```sql 
+psql your_database_name < file_to_import.sql
+```
+
+
+
+(52)
+
+**Consider the output when loading database dump named 'file_to_load.sql'. What does each line of the output mean? What statements would output such results? **
+
+```sql
+NOTICE:  table "students" does not exist, skipping
+DROP TABLE
+CREATE TABLE 
+INSERT 0 1 
+INSERT 0 1 
+INSERT 0 1 
+```
+
+This is a result of running 
+
+```sql
+DROP TABLE IF EXISTS students;
+```
+
+at the start of your sql file.  (DDL sub-language) This is useful to be able to run sql code multiple times without having to delete tables created or data inserted. 
+
+The first time we run 
+
+```sql
+psql some_database_name < students 
+```
+
+No tables have been created yet, so we will get a notice that says 
+
+```sql
+NOTICE:  table "students" does not exist, skipping
+DROP TABLE 
+```
+
+The next time we run 
+
+```sql
+psql some_database_name < students 
+```
+
+there will be no notice because the sql file likely created the `students` file. 
+
+
+
+(53)
+
+**Assume there is a table students . We need to add the following columns to that table: **
+
+- **a column called `passed` and update all of the rows to true**
+
+```sql
+ALTER TABLE students ADD COLUMN passed BOOLEAN;
+UPDATE students SET passed = true;
+```
+
+
+
+- **a column `updated` of `timestamp` data type and update it with `DEFAULT` value of current time. **
+
+```sql
+ALTER TABLE students ADD COLUMN updated TIMESTAMP DEFAULT NOW(); * can also use CURRENT_TIMESTAMP
+UPDATE students SET updated = DEFAULT; 
+```
+
+
+
+- **a column called `year_of_acceptance` and set it to 2021. **
+
+  ```sql
+  ALTER TABLE students ADD COLUMN year_of_acceptance integer;
+  UPDATE students SET year_of_acceptance = 2021; 
+  
+  ALTER TABLE students ADD COLUMN year_of_acceptance 
+  ```
+
+  
+
+  <u>??????HOW DO I ADD JUST A YEAR TO THIS?????????</u>
+
+
+
+(54)
+
+```sql
+id |  item  | production_year
+---------------------------
+1  |  chair | 1802
+---------------------------
+2  |  book  | 1789
+```
+
+**Write a query that will return a table with two columns: the name of the item and how old it is. The query should always be the same while the output should be changed every year. **
+
+```sql
+SELECT item, (DATE_PART('year', CURRENT_TIMESTAMP) - production_year) FROM some_table;
+```
+
+
+
+(55)
+
+```sql
+id |    name    |    year_of_birth    |    grade
+-------------------------------------------------
+1  |  'Eddie'   |   1986-01-01        |   A
+2  |  'Maggie'  |   1975-04-11        |   B+
+3  |  'Elenore' |   1995-03-13        |   A-
+```
+
+
+
+```sql
+DROP TABLE students;
+
+CREATE TABLE students (
+ id serial PRIMARY KEY,
+ name text,
+ year_of_birth date,
+ grade text
+);
+
+INSERT INTO students (name, year_of_birth, grade) VALUES 
+('Eddie', '1986-01-01', 'A'),
+('Maggie', '1975-04-11', 'B+'),
+('Elenore', '1995-03-13', 'A-');
+```
+
+
+
+- **Next, change all the grades to be 'A+'**
+
+```sql
+UPDATE students SET grade = 'A+';
+```
+
+
+
+- **Add new record: ('Johny', '1987-07-23', 'C-')**
+
+```sql
+INSERT INTO students (name, year_of_birth, grade) VALUES 
+('Johny', '1987-07-23','C-');
+```
+
+
+
+- **Add a new column called classes **
+
+  ```sql
+  ALTER TABLE students ADD COLUMN classes text;
+  ```
+
+  
+
+- **Add data to the column so that Eddie attends Math, Maggie attends Physics and Elenore attends History.**
+
+```sql
+UPDATE students SET classes = 'Math' WHERE name = 'Eddie';
+UPDATE students SET classes = 'Physics' WHERE name = 'Maggie';
+UPDATE students SET classes = 'History' WHERE name = 'Elenore';
+UPDATE students SET classes = 'Math' WHERE name = 'Johny';
+```
+
+
+
+- **Remove the last record**
+
+```sql
+DELETE FROM students WHERE name = 'Johny';
+```
+
+
+
+- **Eddie is no longer participating in Math classes. He doesn't attend any classes. How would you reflect that in the table?**
+
+```sql
+DELETE FROM students WHERE name = 'Eddie';
+```
+
+
+
+- **We discovered that we have the wrong information about Elenore. Change her year of birth to '1994-03-13', grade to 'B' and class to 'Science'. **
+
+```sql
+UPDATE students SET year_of_birth = '1994-03-13', 
+grade = 'B', classes = 'Science' WHERE name = 'Elenore';
+```
+
+
+
+(56)
+
+```sql
+id | employees_name | salary | to_pay
+-----------------------------------------
+1  | Chris Rock     | 2000.00   | 2000.00
+2  | Benny George   | 2500.00   | 2500.00
+3  | Melissa Fu     | 3000.00   | 3000.00
+```
+
+```sql
+DROP TABLE salary_table;
+
+CREATE TABLE salary_table (
+  id serial PRIMARY KEY,
+  employee_name text,
+  salary decimal(10,2),
+  to_pay decimal(10,2)
+);
+
+INSERT INTO salary_table (employee_name, salary,to_pay) VALUES 
+('Chris Rock', 2000.00, 2000.00),
+('Benny George', 2500.00, 2500.00),
+('Melissa Fu', 3000.00, 3000.00);
+
+SELECT * FROM salary_table;
+```
+
+- **Everyone got a 10% raise. Write a query that reflects that.**
+
+```sql
+SELECT (1.1*salary) FROM salary_table;
+```
+
+
+
+- **Now on top of that everyone got a bonus of 100. Write a query that reflects that.**
+
+  ```sql
+  SELECT (1.1*salary)+100 FROM salary_table;
+  ```
+
+
+
+(57)
+
+```sql
+ERROR:  new row for relation "students" violates check constraint "students_name_check"
+DETAIL:  Failing row contains (, 1990-01-01, 'A+', '0989-22-22-12').
+```
+
+**Describe why the error was thrown and what information does this error message give us:**
+
+If we defined the table as follows:
+
+```sql
+DROP TABLE students;
+
+CREATE TABLE students (
+ id serial PRIMARY KEY,
+ name text CONSTRAINT student_name_check CHECK (length(name) > 0),
+ year_of_birth date,
+ grade text,
+ student_id text
+);
+```
+
+And we added an `INSERT` statement 
+
+```sql
+INSERT INTO students (name, year_of_birth, grade, student_id) VALUES 
+('', '1990-01-01', 'A+', '0989-22-22-12');
+```
+
+This would violate the `students_name_check` constraint which checks that the name is longer that 0. 
+
+
+
+(58)
+
+**How can we restrict what information is stored in a table while designing a schema? **
+
+Data can be restricted in a table by table constaints, column constraints, data-types, Primary Keys and Foreign Keys (Primary Keys constrain with `NOT NULL` and `UNIQUE` while FK's maintain referential integrity by limiting values in that row to values that are present in the parent table).
+
+
+
+<u>********************CHECK THIS!!!!!*************</u>
+
+
+
+(59)
+
+```sql
+id |    name    |    year_of_birth    |    grade
+-------------------------------------------------
+1  |  'Eddie'   |   1986-01-01        |   A
+2  |  'Maggie'  |   1975-04-11        |   B+
+3  |  'Eleanor' |   1995-03-13        |   A-
+```
+
+- **Write a statement to remove the "Eleanor" record from the table. **
+
+```sql
+DELETE FROM students WHERE name = 'Eleanor';
+```
+
+
+
+- **Write a statement to add a record with data as follows: ('John', '1994-08-09', 'A');**
+
+```sql
+INSERT INTO students (name, year_of_birth, grade) VALUES 
+('John', '1994-08-09', 'A');
+```
+
+
+
+- **What will be `id` number for the "John" record knowing that `id` is a data type `serial`? Why?**
+
+  `4` because id was defined as a `serial` data type.  
+
+  `SERIAL` is actually creating a sequence object (DDL) and is equivalent to :
+
+  ```sql
+  DROP TABLE students;
+  DROP SEQUENCE student_id_seq;
+  
+  
+  CREATE SEQUENCE student_id_seq;
+  
+  CREATE TABLE students (
+   id integer DEFAULT nextval('student_id_seq')
+  );
+  ```
+
+  Sequences are a type of relation that create a series of numbers and remember the last number it returned.  Serial adds the constraint `NOT NULL`.
+
+  Even if you delete rows from the table, serial will still remember that that value was added, and will return the next despite there being no `3` in the serial column once deleted.
+
+
+
+(60)
+
+**Create a table `students` that:**
+
+- **`id` has an auto-incrementing integer column that provides the same constraints as PRIMARY KEY**
+- **`name` of the student that can store text max 200 char**
+- **`grade` storing 2 char string**
+
+**Don't use `serial` to create id column**
+
+**Don't use PRIMARY KEY constraint.**
+
+```sql
+DROP TABLE students;
+DROP SEQUENCE students_id_seq;
+
+
+CREATE SEQUENCE students_id_seq;
+
+CREATE TABLE students (
+  id integer NOT NULL UNIQUE DEFAULT nextval('students_id_seq'),
+  name varchar(200),
+  grade char(2)
+);
+```
+
+
+
+(61)
+
+```SQL
+SELECT name FROM users
+  WHERE admin <> true OR admin IS NULL;
+```
+
+```sql
+DROP TABLE users;
+
+CREATE TABLE users (
+  name text,
+  admin BOOLEAN
+);
+
+INSERT INTO users (admin,name) VALUES 
+('1', 'Aliya'),
+(NULL, 'Maka'),
+('1','Jack'),
+('0','Chelsea');
+
+SELECT name FROM users
+  WHERE admin <> true OR admin IS NULL;
+```
+
+
+
+- **Will this code result in an error?**
+
+No, a result table will be returned with the names of the users who have a value of `true` in the `admin` column. 
+
+- **What is the `<>` operator?**
+
+The `<>` operator and the `!=` operator are case sesitive and determine exact string inequality. 
+
+
+
+(62)
+
+```sql
+CREATE TABLE school (
+	id serial, 
+	class_name varchar(100), 
+	teacher_name vanrchar(300),
+	teacher_contact_number int, 
+	number_of_students int,
+	average_grade int 
+);
+```
+
+- **What are the problems with a table like this?**
+
+This table is not normalized.  *SEE PROBLEMS #3 and #25 for more on normalization.
+
+- **How would you fix it?**
+
+School, classes, teachers should be are entities, or relations.
+
+School has (many) teachers (required) and (many) classes(required.
+
+Teachers have a (1) school (required) and (many) classes(required)
+
+Classes have a (1) school (required) and (1) teachers(required)
+
+
+
+(64)
+
+**Imagine you are hired to design a database for a school. The school board need to be able to get information such as (name, classes that they teach), students (name, classes they attend, and the grade for each class), and classes (name of the class, what teacher teaches it and what students attend the class).**
+
+```sql
+DROP TABLE student_classes;
+DROP TABLE students;
+DROP TABLE classes;
+DROP TABLE teachers;
+
+CREATE TABLE teachers (
+  id serial PRIMARY KEY,
+  teacher_name varchar(300),
+  teacher_contact_info integer
+);
+
+CREATE TABLE classes (
+  id serial PRIMARY KEY,
+  class_name varchar(100),
+  number_of_students integer,
+  teacher_id integer REFERENCES teachers(id)
+);
+
+CREATE TABLE students (
+  id serial PRIMARY KEY,
+  name text
+);
+
+CREATE TABLE student_classes (
+  id serial PRIMARY KEY,
+  student_id integer REFERENCES students(id),
+  class_id integer REFERENCES classes(id),
+  grade text
+);
+
+INSERT INTO teachers (teacher_name, teacher_contact_info) VALUES
+('Mrs. Moser', 32348498),
+('Mrs.Brown', 7832974),
+('Mr.Teal', 3284732);
+
+INSERT INTO classes (class_name, teacher_id) VALUES
+('Science',1),
+('Math',1),
+('History',2),
+('PE',2),
+('Bio',3),
+('Chem',3);
+
+INSERT INTO students (name) VALUES 
+('Maka'),
+('Jack'),
+('Aliya'),
+('Bob'),
+('james'),
+('Charles'),
+('Fred');
+
+
+INSERT INTO student_classes (student_id, class_id, grade) VALUES 
+(1,1,'A'),
+(1,2,'A'),
+(1,4,'A'),
+(2,5,'C'),
+(2,1,'A'),
+(3,6,'A'),
+(3,3,'F'),
+(4,1,'C'),
+(4,6,'A'),
+(5,1,'B'),
+(5,2,'D'),
+(5,6,'B'),
+(6,1,'F'),
+(6,2,'F'),
+(6,3,'F'),
+(6,6,'F');
+
+
+-- Teachers with classes
+SELECT class_name, teacher_name FROM classes 
+INNER JOIN teachers 
+ON teachers.id = classes.teacher_id;
+
+
+-- Number of kids in each class, with class name, and teacher name
+SELECT count(student_id), class_name, teacher_name 
+FROM student_classes 
+INNER JOIN classes 
+ON student_classes.class_id = classes.id
+INNER JOIN teachers
+ON classes.teacher_id = teachers.id
+GROUP BY class_name, teacher_name;
+
+
+
+
+-- ALL STUDENTS WITH ONLY A'S ?????????
+
+SELECT name, count(grade) FROM students AS s
+JOIN student_classes AS sc
+ON s.id = sc.student_id
+GROUP BY name
+HAVING COUNT(DISTINCT grade) = COUNT(DISTINCT name)
+;
+
+-- All the classes that one student attends
+
+SELECT string_agg(class_name,','), name FROM classes c
+INNER JOIN student_classes AS sc
+ON c.id = sc.class_id
+inner join students AS s
+on s.id = sc.student_id
+GROUP BY name
+HAVING name = 'Jack';
+
+
+-- AVERAGE GRADE FOR EACH CLASS  ??????
+
+-- SELECT class_name, avg(grade) FROM student_classes sc 
+-- INNER JOIN classes c 
+-- ON sc.class_id = c.id
+-- GROUP BY class_name;
+
+
+-- Grades of each student 
+SELECT name, string_agg(grade,',') FROM students s 
+INNER JOIN student_classes sc 
+ON s.id = sc.student_id 
+GROUP BY name;
+
+-- Grades of teachers 
+SELECT teacher_name, string_agg(grade,',') FROM teachers t 
+JOIN classes c 
+ON t.id = c.teacher_id 
+JOIN student_classes sc 
+ON c.id = sc.class_id
+GROUP BY teacher_name;
+```
+
+
 
 
 
