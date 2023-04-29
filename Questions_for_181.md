@@ -357,7 +357,9 @@ A single field or group of attributes that uniquely identify a record is referre
 
 UNIQUE: The `id` column also has a `UNIQUE` constraint, which prevents any duplicate values from being entered into that column.
 
-One of the key functions of a database is to maintain the integrity and  quality of the data that it is storing. Keys and Constraints are rules  that define what data values are allowed in certain columns. They are an important database concept and are part of a database's schema  definition.  Defining Keys and Constraints is part of the database design process and ensures that the data within a database is reliable and maintains its  integrity. Constraints can apply to a specific column, an entire table,  more than one table, or an entire schema.
+One of the key functions of a database is to maintain the integrity and  quality of the data that it is storing. Keys and Constraints are rules  that define what data values are allowed in certain columns. They are an important database conce
+
+pt and are part of a database's schema  definition.  Defining Keys and Constraints is part of the database design process and ensures that the data within a database is reliable and maintains its  integrity. Constraints can apply to a specific column, an entire table,  more than one table, or an entire schema.
 
 Just as intended, that unique constraint prevented duplicate data in our table.It's not unusual for a column such as `id` to have a `UNIQUE` constraint. Having some sort of 'id' column in a database table is a  common, and useful, practice. Such a column is generally used to store a unique identifier for each row of data. In order for it to work  effectively though, we need to ensure that each value in such a column  is actually unique. Thus far, we've added data in such a way so that  each `id` was unique and each record distinct, but we don't  want to have to manually keep track of every value we add to that  column; using a `UNIQUE` constraint lets PostgreSQL do the work for us.
 
@@ -732,15 +734,21 @@ DELETE FROM students;
 
 **Why do we need to create multiple tables instead of just keeping all the data in one table?**
 
+
+
+I think the best way to discuss the levels of schema are to discuss notmalization and real world examples of implementation. 
+
 Normalization is a procedure in which data is organized in a database.  This data organization is carried out through the creation of tables and establishing relationships between these tables. Why is this crucial in regards to databases? Wouldn't a single table with all of our data suffice? 
 
 Imagine having a single table in a database with seemingly endless rows and columns.  What problems could arise? To start, this could be very overwhelming and easily disorganized. There is also the issue of redundancy, which is something that should be avoided in any code if possible.  
 
 Let's say we have the names, ages, and addresses of customers and they each order different products with product numbers, names, locations,etc.  Each time a product is purchased, all of this data is re-entered into our database.  This could lead to input errors and would make any updates laborous. Our data integrity is at risk of being compromised, as maintaining accuracy and consistency is difficult with this lack of data organization.
 
-Now lets conceptualize a schema, or organization/structure of a database, that will work better for us.  This is the mechanism in which we carry out normalization. Creating an entity-relationship-diagram (ERD) will allow us to visualize our database and table structure, and the relationships between them. This high level of abstraction will enable us to make the best decisions logically for our data organization. Entities (real world objects) will later help define our relations, or tables, and their relationships will assist us with our data definitions. 
+Now lets conceptualize a schema, or organization/structure of a database, that will work better for us.  This is our high -level design focused schema.  We are concerned here with visualizing are entities in an abstract way.  This is the mechanism in which we carry out normalization. Creating an entity-relationship-diagram (ERD) will allow us to visualize our database and table structure, and the relationships between them. This high level of abstraction will enable us to make the best decisions logically for our data organization. Entities (real world objects) will later help define our relations, or tables, and their relationships will assist us with our data definitions. 
 
-If we revisit our contrived single table example, we can better understand how normalization helped us reduce reduncancy and improved data integrity.  I'm going to describe our physical schema. We created three separate tables: customers, orders, and products. Each of these tables contains a primary key which will uniquely identify a row in our table. Our relationship between `customers` and `products` is a many-to-many relationship (cardinality), so we have an orders table to join them.  This join table will have two Foreign Keys (`customer_id`/`product_id`) that will reference the Primary Keys in our customers (`customers.id`) and orders (`orders.id`) tables. Now instead of re-entering customer information and product information each time an order is placed, we can just add a row with integers into our `orders` table.  This drastically decreased redundancy and allows us to update customer and product information quickly. 
+Logical Schema is between a conceptual schema and a physical schema.  We can think of this as including implementation details with no specific database in mind. In other words, a logical schema is language agnostic, and is purely concerned with SQL standard. 
+
+If we revisit our contrived single table example, we can better understand how normalization helped us reduce reduncancy and improved data integrity.  I'm going to describe our physical schema. This is our third level of schema, and is concerned with actual implementation details.  We will define attributes, data-types, constraints, and map relationships through keys. We created three separate tables: customers, orders, and products. Each of these tables contains a primary key which will uniquely identify a row in our table. Our relationship between `customers` and `products` is a many-to-many relationship (cardinality), so we have an orders table to join them.  This join table will have two Foreign Keys (`customer_id`/`product_id`) that will reference the Primary Keys in our customers (`customers.id`) and orders (`orders.id`) tables. Now instead of re-entering customer information and product information each time an order is placed, we can just add a row with integers into our `orders` table.  This drastically decreased redundancy and allows us to update customer and product information quickly. 
 
 Through the implementation of Primary and Foreign Keys, we've also ensured that our data has referential integrity.  A value in our referencing table (child table) cannot reference a value that is not present in our referenced table (parent table).  In practice, our `users` JOIN table in our example cannot hold values in the `customer_id`/`product_id` (FK's) columns that are not present in their respective `customers.id`/`products.id` (PK's) columns .  In this way, table relationships will remain intact and consistent. 
 
@@ -2093,12 +2101,18 @@ GROUP BY class_name, teacher_name;
 
 -- ALL STUDENTS WITH ONLY A'S ?????????
 
-SELECT name, count(grade) FROM students AS s
-JOIN student_classes AS sc
-ON s.id = sc.student_id
-GROUP BY name
-HAVING COUNT(DISTINCT grade) = COUNT(DISTINCT name)
-;
+    SELECT DISTINCT name
+      FROM students AS s
+INNER JOIN student_classes AS sc
+        ON s.id = sc.student_id
+     WHERE grade = 'A'
+       AND name IN (    SELECT name
+                          FROM students AS s
+                    INNER JOIN student_classes AS sc
+                            ON s.id = sc.student_id
+                    GROUP BY name
+                      HAVING COUNT(DISTINCT grade) = 1);
+
 
 -- All the classes that one student attends
 
@@ -2133,6 +2147,18 @@ JOIN student_classes sc
 ON c.id = sc.class_id
 GROUP BY teacher_name;
 ```
+
+
+
+
+
+
+
+
+
+
+
+payment_token ~ '^[A-Z]{8}$'
 
 
 
